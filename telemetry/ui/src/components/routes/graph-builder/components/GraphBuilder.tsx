@@ -828,8 +828,12 @@ const GraphBuilder: React.FC = () => {
 
       {/* Add Node Dialog */}
       {nodeDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setNodeDialog(false)}>
+          <div
+            className="bg-white rounded-lg p-6 w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold mb-4">Add New Node</h2>
             <div className="space-y-4">
               <div>
@@ -906,11 +910,11 @@ const GraphBuilder: React.FC = () => {
               return (
                 <div className="mt-4">
                   {selected.data?.isConditional ? (
-                    <Button className="w-full" color="blue">
+                    <Button className="w-full" color="blue" onClick={handleToggleConditional}>
                       Make Default
                     </Button>
                   ) : (
-                    <Button className="w-full" outline>
+                    <Button className="w-full" outline onClick={handleToggleConditional}>
                       Make Conditional
                     </Button>
                   )}
