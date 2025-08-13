@@ -23,9 +23,7 @@ export interface ExampleGraph {
 export const multiModalChatbotWorkflow: ExampleGraph = {
   id: 'multi-modal-chatbot',
   title: 'Multi-modal Chatbot',
-  description:
-    'This is an example of a ChatGPT-like bot. It demonstrates \
-  a simple AI chatbot supporting multiple response modes.',
+  description: 'A ChatGPT-like bot which supports multiple response modes.',
   thumbnail: '/api/placeholder/300/200',
   nodes: [
     {
@@ -193,4 +191,168 @@ export const multiModalChatbotWorkflow: ExampleGraph = {
   ]
 };
 
-export const examples = [multiModalChatbotWorkflow];
+// Adaptive CRAG Workflow Example based on the Burr example
+export const adaptiveCRAGWorkflow: ExampleGraph = {
+  id: 'adaptive-crag',
+  title: 'Adaptive CRAG',
+  description: `A system that can dynamically select the most suitable route for a given user query
+  and then self-reflect on the retrieved documents to improve the quality of the response.`,
+  thumbnail: '/api/placeholder/300/200',
+  nodes: [
+    {
+      id: 'node_1755089685294',
+      label: 'router',
+      nodeType: 'action',
+      position: {
+        x: 821,
+        y: 177
+      }
+    },
+    {
+      id: 'node_1755089690311',
+      label: 'terminate',
+      nodeType: 'action',
+      position: {
+        x: 1115,
+        y: 339
+      }
+    },
+    {
+      id: 'node_1755089694185',
+      label: 'rewrite_query_for_lancedb',
+      nodeType: 'action',
+      position: {
+        x: 570,
+        y: 343
+      }
+    },
+    {
+      id: 'node_1755089700914',
+      label: 'search_lancedb',
+      nodeType: 'action',
+      position: {
+        x: 394.5556101445897,
+        y: 474.3736922140555
+      }
+    },
+    {
+      id: 'node_1755089703587',
+      label: 'remove_irrelevant_lancedb_results',
+      nodeType: 'action',
+      position: {
+        x: 221.95028444855586,
+        y: 598.471168855937
+      }
+    },
+    {
+      id: 'node_1755089705880',
+      label: 'extract_keywords_for_exa_search',
+      nodeType: 'action',
+      position: {
+        x: 861.6864514076959,
+        y: 755.013213212404
+      }
+    },
+    {
+      id: 'node_1755089707996',
+      label: 'search_exa',
+      nodeType: 'action',
+      position: {
+        x: 1014.1038166383757,
+        y: 900.4557900504608
+      }
+    },
+    {
+      id: 'node_1755089713104',
+      label: 'ask_assistant',
+      nodeType: 'action',
+      position: {
+        x: 664.42304962349,
+        y: 1049.9762444923501
+      }
+    },
+    {
+      id: 'node_1755089725529',
+      label: 'input: query',
+      nodeType: 'input',
+      position: {
+        x: 821.570514568526,
+        y: 25.81884945807439
+      }
+    }
+  ],
+  edges: [
+    {
+      id: 'xy-edge__node_1755089725529-node_1755089685294',
+      source: 'node_1755089725529',
+      target: 'node_1755089685294',
+      isConditional: false
+    },
+    {
+      id: 'xy-edge__node_1755089685294-node_1755089694185',
+      source: 'node_1755089685294',
+      target: 'node_1755089694185',
+      isConditional: false
+    },
+    {
+      id: 'xy-edge__node_1755089694185-node_1755089700914',
+      source: 'node_1755089694185',
+      target: 'node_1755089700914',
+      isConditional: false
+    },
+    {
+      id: 'xy-edge__node_1755089700914-node_1755089703587',
+      source: 'node_1755089700914',
+      target: 'node_1755089703587',
+      isConditional: false
+    },
+    {
+      id: 'xy-edge__node_1755089703587-node_1755089713104',
+      source: 'node_1755089703587',
+      target: 'node_1755089713104',
+      isConditional: false
+    },
+    {
+      id: 'xy-edge__node_1755089703587-node_1755089705880',
+      source: 'node_1755089703587',
+      target: 'node_1755089705880',
+      condition: 'len(lancedb_results) < docs_limit',
+      isConditional: true
+    },
+    {
+      id: 'xy-edge__node_1755089705880-node_1755089707996',
+      source: 'node_1755089705880',
+      target: 'node_1755089707996',
+      isConditional: false
+    },
+    {
+      id: 'xy-edge__node_1755089707996-node_1755089713104',
+      source: 'node_1755089707996',
+      target: 'node_1755089713104',
+      isConditional: false
+    },
+    {
+      id: 'xy-edge__node_1755089685294-node_1755089713104',
+      source: 'node_1755089685294',
+      target: 'node_1755089713104',
+      condition: 'route="assistant"',
+      isConditional: true
+    },
+    {
+      id: 'xy-edge__node_1755089685294-node_1755089705880',
+      source: 'node_1755089685294',
+      target: 'node_1755089705880',
+      condition: 'route="web_search"',
+      isConditional: true
+    },
+    {
+      id: 'xy-edge__node_1755089685294-node_1755089690311',
+      source: 'node_1755089685294',
+      target: 'node_1755089690311',
+      condition: 'route="terminate"',
+      isConditional: true
+    }
+  ]
+};
+
+export const examples = [multiModalChatbotWorkflow, adaptiveCRAGWorkflow];
