@@ -12,6 +12,7 @@ import { StreamingChatbotWithTelemetry } from './examples/StreamingChatbot';
 import { AdminView } from './components/routes/AdminView';
 import { AnnotationsViewContainer } from './components/routes/app/AnnotationsView';
 import { DeepResearcherWithTelemetry } from './examples/DeepResearcher';
+import GraphBuilder from './components/routes/graph-builder/components/GraphBuilder';
 
 /**
  * Basic application. We have an AppContainer -- this has a breadcrumb and a sidebar.
@@ -46,6 +47,7 @@ const App = () => {
             <Route path="/demos/email-assistant" element={<EmailAssistantWithTelemetry />} />
             <Route path="/demos/deep-researcher" element={<DeepResearcherWithTelemetry />} />
             <Route path="/admin" element={<AdminView />} />
+            <Route path="/graph-builder" element={<GraphBuilder />} />
             <Route path="*" element={<Navigate to="/projects" />} />
           </Routes>
         </AppContainer>
