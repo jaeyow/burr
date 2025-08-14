@@ -563,4 +563,4 @@ export const adaptiveCRAGWorkflow: ExampleGraph = {
   ]
 };
 
-export const examples = [multiModalChatbotWorkflow, streamingChatbotWorkflow, adaptiveCRAGWorkflow];
+export const examples = [multiModalChatbotWorkflow, adaptiveCRAGWorkflow, streamingChatbotWorkflow];
