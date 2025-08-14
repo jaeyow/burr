@@ -84,8 +84,24 @@ const initialEdges: Edge[] = [];
 
 // Available node templates
 const nodeTemplates = [
-  { type: 'action', label: 'Burr Action', icon: <Cog6ToothIcon />, color: '#429dbce6' },
-  { type: 'input', label: 'Input Node', icon: <QuestionMarkCircleIcon />, color: '#ff9800' }
+  {
+    type: 'action',
+    label: 'Action',
+    icon: <Cog6ToothIcon />,
+    color: '#429dbce6'
+  },
+  {
+    type: 'streaming_action',
+    label: 'Streaming Action',
+    icon: <ClipboardDocumentIcon />,
+    color: '#10b981'
+  },
+  {
+    type: 'input',
+    label: 'Input',
+    icon: <QuestionMarkCircleIcon />,
+    color: '#ff9800'
+  }
 ];
 
 interface NodeDialogData {
@@ -143,6 +159,18 @@ const GraphBuilder: React.FC = () => {
       setNodes((nds) =>
         nds.map((node) =>
           node.id === nodeId ? { ...node, data: { ...node.data, label: newLabel } } : node
+        )
+      );
+    },
+    [setNodes]
+  );
+
+  // Handle node type change
+  const handleTypeChange = useCallback(
+    (nodeId: string, newType: string) => {
+      setNodes((nds) =>
+        nds.map((node) =>
+          node.id === nodeId ? { ...node, data: { ...node.data, nodeType: newType } } : node
         )
       );
     },
@@ -211,7 +239,8 @@ const GraphBuilder: React.FC = () => {
             icon: 'settings',
             colorIndex: nodes.length % 10, // Cycle through the 10 pastel colors
             onDelete: handleDeleteNode,
-            onLabelChange: handleLabelChange
+            onLabelChange: handleLabelChange,
+            onTypeChange: handleTypeChange
           }
         };
 
@@ -488,7 +517,8 @@ const GraphBuilder: React.FC = () => {
       data: {
         ...node.data,
         onDelete: handleDeleteNode,
-        onLabelChange: handleLabelChange
+        onLabelChange: handleLabelChange,
+        onTypeChange: handleTypeChange
       }
     }));
 
@@ -800,11 +830,12 @@ const GraphBuilder: React.FC = () => {
 
       {/* Right panel: ExampleGallery only */}
       <div
-        className={`${rightOpen ? 'w-72' : 'w-12'} flex-shrink-0 bg-white shadow-lg z-10 transition-all duration-200 overflow-hidden`}>
+        className={`${rightOpen ? 'w-72' : 'w-12'} flex-shrink-0 bg-white shadow-lg z-10 transition-all duration-200`}
+        style={{ height: 'calc(100vh - 55px)' }}>
         <div className="flex flex-col h-full">
           {/* Scrollable content (only when open) */}
           {rightOpen ? (
-            <div className="flex-1 overflow-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4">
               <ExampleGallery examples={examples} onLoadExample={handleLoadExample} />
             </div>
           ) : (
@@ -812,7 +843,7 @@ const GraphBuilder: React.FC = () => {
           )}
           {/* Chevron toggle always visible at bottom */}
           <div
-            className={`flex items-center ${rightOpen ? 'justify-start' : 'justify-center'} p-2`}>
+            className={`flex items-center ${rightOpen ? 'justify-start' : 'justify-center'} p-2 border-t border-gray-200 bg-white flex-shrink-0`}>
             <button
               onClick={() => setRightOpen(!rightOpen)}
               className="p-1 rounded hover:bg-gray-100">
