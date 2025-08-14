@@ -1,6 +1,5 @@
 import React, { memo, useState, useCallback, useRef } from 'react';
 import { Handle, Position, NodeProps, Node } from '@xyflow/react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
 
 // Pastel color palette for nodes
 const pastelColors = [
@@ -24,6 +23,7 @@ export interface CustomNodeData extends Record<string, unknown> {
   colorIndex?: number;
   onDelete?: (nodeId: string) => void;
   onLabelChange?: (nodeId: string, newLabel: string) => void;
+  onTypeChange?: (nodeId: string, newType: string) => void;
 }
 
 type CustomNodeType = Node<CustomNodeData>;
@@ -38,12 +38,6 @@ const CustomNode: React.FC<NodeProps<CustomNodeType>> = ({ id, data, selected })
   // Use colorIndex if provided, otherwise generate based on node id
   const colorIndex = data.colorIndex ?? parseInt(id.replace(/\D/g, '')) % pastelColors.length;
   const colors = pastelColors[colorIndex];
-
-  const handleDelete = () => {
-    if (data.onDelete && typeof data.onDelete === 'function') {
-      data.onDelete(id);
-    }
-  };
 
   const handleLabelClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -123,16 +117,21 @@ const CustomNode: React.FC<NodeProps<CustomNodeType>> = ({ id, data, selected })
         p-3 relative
         ${isInputNode ? 'flex flex-col items-center justify-center h-full text-center' : ''}
       `}>
-        {/* Delete button - only show when selected */}
-        {selected && (
+        {/* Toggle node type button - only show when selected and not input node */}
+        {selected && !isInputNode && (
           <button
-            onClick={handleDelete}
-            className={`
-              absolute top-1 right-1 p-1 rounded hover:bg-opacity-20
-              ${isInputNode ? 'text-gray-600 hover:bg-gray-600' : 'hover:bg-current'}
-            `}
-            style={{ color: isInputNode ? '#666' : colors.border }}>
-            <XMarkIcon className="w-3.5 h-3.5" />
+            onClick={() => {
+              if (data.onTypeChange) {
+                const newType = data.nodeType === 'action' ? 'streaming_action' : 'action';
+                data.onTypeChange(id, newType);
+              }
+            }}
+            className="absolute top-1 right-1 w-8 h-8 p-2 flex items-center justify-center rounded hover:bg-current hover:bg-opacity-20 group font-bold text-xs text-gray-700"
+            style={{ color: colors.border }}
+            title={data.nodeType === 'action' ? 'Change to Streaming Action' : 'Change to Action'}>
+            <span className="group-hover:text-gray-800">
+              {data.nodeType === 'streaming_action' ? 's' : 'a'}
+            </span>
           </button>
         )}
 
