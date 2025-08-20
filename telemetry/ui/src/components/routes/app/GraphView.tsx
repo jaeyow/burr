@@ -2,7 +2,8 @@ import { ActionModel, ApplicationModel, Step } from '../../../api';
 
 import ELK from 'elkjs/lib/elk.bundled.js';
 import React, { createContext, useCallback, useLayoutEffect, useRef, useState } from 'react';
-import ReactFlow, {
+import {
+  ReactFlow,
   BaseEdge,
   Controls,
   EdgeProps,
@@ -11,14 +12,25 @@ import ReactFlow, {
   Position,
   ReactFlowProvider,
   getBezierPath,
-  useNodes,
   useReactFlow
-} from 'reactflow';
+} from '@xyflow/react';
 
-import 'reactflow/dist/style.css';
 import { backgroundColorsForIndex } from './AppView';
 import { getActionStatus } from '../../../utils';
-import { getSmartEdge } from '@tisoap/react-flow-smart-edge';
+
+// Pastel color palette for nodes (same as GraphBuilder)
+const pastelColors = [
+  { border: '#FF6B6B', background: '#FFE5E5' }, // Coral
+  { border: '#4ECDC4', background: '#E5F9F6' }, // Turquoise
+  { border: '#45B7D1', background: '#E5F4FD' }, // Sky blue
+  { border: '#96CEB4', background: '#F0F9F4' }, // Mint green
+  { border: '#FFEAA7', background: '#FFFCF0' }, // Light yellow
+  { border: '#DDA0DD', background: '#F5F0F5' }, // Plum
+  { border: '#98D8C8', background: '#F0FAF7' }, // Seafoam
+  { border: '#F7DC6F', background: '#FEFBF0' }, // Pale yellow
+  { border: '#BB8FCE', background: '#F4F1F7' }, // Lavender
+  { border: '#85C1E9', background: '#F0F8FF' } // Light blue
+];
 
 const elk = new ELK();
 
@@ -26,10 +38,12 @@ const elkOptions = {
   'elk.algorithm': 'layered',
   'elk.layered.spacing.nodeNodeBetweenLayers': '100',
   'elk.spacing.nodeNode': '80',
-  'org.eclipse.elk.alg.layered.options.CycleBreakingStrategy': 'GREEDY',
-  'org.eclipse.elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
-  // 'org.eclipse.elk.layered.feedbackEdges': 'true',
-  'org.eclipse.elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP'
+  'elk.layered.spacing.edgeNodeBetweenLayers': '50',
+  'elk.spacing.edgeNode': '40',
+  'elk.spacing.edgeEdge': '15',
+  'elk.layered.nodePlacement.strategy': 'SIMPLE',
+  'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+  'elk.layered.cycleBreaking.strategy': 'GREEDY'
 };
 
 type ActionNodeData = {
@@ -86,27 +100,57 @@ const ActionNode = (props: { data: NodeData }) => {
   const shouldHighlight = indexOfAction !== -1;
   const step = highlightedActions[indexOfAction];
   const isCurrentAction = currentAction?.step_start_log.action === name;
+  
+  // Calculate color index based on action name hash for consistent colors
+  const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % pastelColors.length;
+  const colors = pastelColors[colorIndex];
+  
   const bgColor =
     isCurrentAction && step !== undefined
       ? backgroundColorsForIndex(0, getActionStatus(step))
       : shouldHighlight
-        ? 'bg-gray-100'
-        : '';
+        ? colors.background
+        : colors.background;
   const opacity = hoverAction?.step_start_log.action === name ? 'opacity-50' : '';
-  const additionalClasses = isCurrentAction
-    ? 'border-dwlightblue/50 text-white border-2'
+  const borderColor = isCurrentAction
+    ? '#429dbce6'
     : shouldHighlight
-      ? 'border-dwlightblue/50 border-2'
-      : 'border-dwlightblue/20 border-2';
+      ? colors.border
+      : colors.border;
+  
   return (
     <>
-      <Handle type="target" position={Position.Top} />
+      <Handle 
+        type="target" 
+        position={Position.Top}
+        style={{
+          background: 'white',
+          border: `2px solid ${colors.border}`,
+          width: 12,
+          height: 12
+        }}
+      />
       <div
-        className={`${bgColor} ${opacity} ${additionalClasses} text-xl font-sans p-4 rounded-md border`}
-      >
+        className={`${opacity} text-lg font-sans p-4 rounded-lg border-2 border-solid transition-all duration-200 ease-in-out shadow-sm hover:shadow-md`}
+        style={{
+          backgroundColor: bgColor,
+          borderColor: borderColor,
+          color: isCurrentAction ? 'white' : colors.border,
+          minWidth: '120px'
+        }}>
         {name}
       </div>
-      <Handle type="source" position={Position.Bottom} id="a" />
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        id="a"
+        style={{
+          background: 'white',
+          border: `2px solid ${colors.border}`,
+          width: 12,
+          height: 12
+        }}
+      />
     </>
   );
 };
@@ -114,14 +158,31 @@ const ActionNode = (props: { data: NodeData }) => {
 const InputNode = (props: { data: NodeData }) => {
   return (
     <>
-      <div className=" text-xl font-sans p-4 rounded-md  bg-white bg-opacity-0">
+      <div 
+        className="text-lg font-sans p-4 rounded-lg border-2 border-dashed transition-all duration-200 ease-in-out shadow-sm hover:shadow-md text-center"
+        style={{
+          borderColor: '#666',
+          backgroundColor: '#fff',
+          color: '#666',
+          minWidth: '120px'
+        }}>
         {props.data.label}
       </div>
-      <Handle type="source" position={Position.Bottom} id="a" className="w-0" />
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        id="a"
+        style={{
+          background: 'white',
+          border: '2px solid #666',
+          width: 12,
+          height: 12
+        }}
+      />
     </>
   );
 };
-// TODO -- separate out into different edge types
+// Custom edge component with GraphBuilder styling
 export const ActionActionEdge = ({
   sourceX,
   sourceY,
@@ -130,48 +191,54 @@ export const ActionActionEdge = ({
   sourcePosition,
   targetPosition,
   markerEnd,
-  data
+  data,
+  selected
 }: EdgeProps) => {
-  const nodes = useNodes();
   data = data as EdgeData;
   const { highlightedActions: previousActions, currentAction } =
     React.useContext(NodeStateProvider);
   const allActionsInPath = [...(previousActions || []), ...(currentAction ? [currentAction] : [])];
   const containsFrom = allActionsInPath.some(
-    (action) => action.step_start_log.action === data.from
+    (action) => action.step_start_log.action === data?.from
   );
-  const containsTo = allActionsInPath.some((action) => action.step_start_log.action === data.to);
+  const containsTo = allActionsInPath.some((action) => action.step_start_log.action === data?.to);
   const shouldHighlight = containsFrom && containsTo;
-  const getSmartEdgeResponse = getSmartEdge({
-    sourcePosition,
-    targetPosition,
+
+  const [edgePath] = getBezierPath({
     sourceX,
     sourceY,
+    sourcePosition,
     targetX,
     targetY,
-    nodes
+    targetPosition
   });
-  let edgePath = null;
-  if (getSmartEdgeResponse !== null) {
-    edgePath = getSmartEdgeResponse.svgPathString;
-  } else {
-    edgePath = getBezierPath({
-      sourceX,
-      sourceY,
-      sourcePosition,
-      targetX,
-      targetY,
-      targetPosition
-    })[0];
+
+  const isConditional = data?.condition && data.condition !== 'default';
+
+  const edgeStyle: React.CSSProperties = {
+    strokeWidth: selected ? 4 : shouldHighlight ? 3 : 2,
+    stroke: shouldHighlight ? '#429dbce6' : data?.condition === 'default' ? '#94a3b8' : '#429dbce6'
+  };
+
+  // Add dashed animation for conditional edges
+  if (isConditional) {
+    edgeStyle.strokeDasharray = '8,4';
+    edgeStyle.animation = 'dash 2s linear infinite';
   }
 
-  const style = {
-    markerColor: shouldHighlight ? 'black' : 'gray',
-    strokeWidth: shouldHighlight ? 2 : 0.5
-  };
   return (
     <>
-      <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} label={'test'} />
+      {/* Add CSS animation for dashed lines */}
+      <style>
+        {`
+          @keyframes dash {
+            to {
+              stroke-dashoffset: -12;
+            }
+          }
+        `}
+      </style>
+      <BaseEdge path={edgePath} markerEnd={markerEnd} style={edgeStyle} />
     </>
   );
 };
@@ -196,20 +263,27 @@ const getLayoutedElements = (
     },
     {} as { [key: string]: EdgeType }
   );
+  
   const graph = {
     id: 'root',
-    layoutOptions: options,
-    children: nodes.map((node) => ({
-      ...node,
-      // Adjust the target and source handle positions based on the layout
-      // direction.
-      targetPosition: isHorizontal ? 'left' : 'top',
-      sourcePosition: isHorizontal ? 'right' : 'bottom',
-
-      // Hardcode a width and height for elk to use when layouting.
-      width: 150,
-      height: 100
-    })),
+    layoutOptions: { ...elkOptions, ...options },
+    children: nodes.map((node) => {
+      // Calculate approximate dimensions based on node content
+      const nodeData = node.data as ActionNodeData | InputNodeData;
+      const labelLength = nodeData.label.length;
+      const width = Math.max(150, labelLength * 8 + 40); // Dynamic width based on label
+      const height = node.type === 'externalInput' ? 60 : 80; // Different heights for different node types
+      
+      return {
+        ...node,
+        // Adjust the target and source handle positions based on the layout direction
+        targetPosition: isHorizontal ? 'left' : 'top',
+        sourcePosition: isHorizontal ? 'right' : 'bottom',
+        // Use calculated dimensions
+        width,
+        height
+      };
+    }),
     edges: edges.map((edge) => {
       return {
         ...edge,
@@ -232,7 +306,7 @@ const getLayoutedElements = (
     edges: (layoutedGraph?.edges || []).map((edge) => {
       return {
         ...edge,
-        markerEnd: { type: MarkerType.Arrow, width: 20, height: 20 },
+        markerEnd: { type: MarkerType.ArrowClosed, width: 15, height: 15, color: '#429dbce6' },
         source: edge.sources[0],
         target: edge.targets[0],
         data: {
@@ -269,7 +343,7 @@ const convertApplicationToGraph = (stateMachine: ApplicationModel): [NodeType[],
       id: `${action.name}:${input}-${action.name}`,
       source: inputUniqueID(action, input),
       target: action.name,
-      markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20 },
+      markerEnd: { type: MarkerType.ArrowClosed, width: 15, height: 15, color: '#429dbce6' },
       data: { from: inputUniqueID(action, input), condition: input, to: action.name }
     }))
   );
@@ -277,7 +351,7 @@ const convertApplicationToGraph = (stateMachine: ApplicationModel): [NodeType[],
     id: `${transition.from_}-${transition.to}`,
     source: transition.from_,
     target: transition.to,
-    markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20 },
+    markerEnd: { type: MarkerType.ArrowClosed, width: 15, height: 15, color: '#429dbce6' },
     data: { from: transition.from_, to: transition.to, condition: transition.condition }
   }));
   return [
@@ -322,8 +396,8 @@ export const _Graph = (props: {
   const { fitView } = useReactFlow();
 
   const onLayout = useCallback(
-    ({ direction = 'UP', useInitialNodes = false }): void => {
-      const opts = { 'elk.direction': direction, ...elkOptions };
+    ({ direction = 'DOWN', useInitialNodes = false }): void => {
+      const opts = { ...elkOptions, 'elk.direction': direction };
       const ns = useInitialNodes ? initialNodes : nodes;
       const es = useInitialNodes ? initialEdges : edges;
 
@@ -334,7 +408,7 @@ export const _Graph = (props: {
         window.requestAnimationFrame(() => fitView());
       });
     },
-    [nodes, edges]
+    [nodes, edges, initialNodes, initialEdges, fitView]
   );
 
   useLayoutEffect(() => {
@@ -347,13 +421,12 @@ export const _Graph = (props: {
         highlightedActions: props.previousActions,
         hoverAction: props.hoverAction,
         currentAction: props.currentAction
-      }}
-    >
+      }}>
       <div className="h-full w-full relative">
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          edgesUpdatable={false}
+          edgesReconnectable={false}
           nodesDraggable={false}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
