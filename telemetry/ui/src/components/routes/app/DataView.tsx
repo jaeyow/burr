@@ -128,7 +128,7 @@ const SectionHeaderWithExpand = (props: {
         : ChevronDownIcon;
   return (
     <div className={`flex flex-row items-center gap-1 ${props.hideTopBorder ? '' : 'border-t'}`}>
-      <h1 className="text-2xl text-gray-900 font-semibold">{props.name}</h1>
+      <h1 className="text-base text-gray-900 font-semibold">{props.name}</h1>
       <MinimizeMaximizeIcon
         className={classNames(
           'text-gray-500',
@@ -228,7 +228,7 @@ export const DataView = (props: { currentStep: Step | undefined; priorStep: Step
       </div>
       {error && (
         <>
-          <h1 className="text-2xl text-gray-900 font-semibold">Error</h1>
+          <h1 className="text-base text-gray-900 font-semibold">Error</h1>
           <ErrorView error={error} />
         </>
       )}
@@ -466,7 +466,7 @@ const Header = (props: {
 
   return (
     <div className="flex flex-row gap-1 z-10 pb-2 items-center">
-      <h1 className="text-lg text-gray-900 font-semibold text-under">{props.name}</h1>
+      <h1 className="text-sm text-gray-900 font-semibold text-under">{props.name}</h1>
       <MinimizeMaximizeIcon
         className={classNames(
           'text-gray-500',

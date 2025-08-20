@@ -9,7 +9,7 @@ import {
 import { useMutation, useQuery } from 'react-query';
 import { Loading } from '../../common/loading';
 import { ApplicationTable } from './StepList';
-import { TwoColumnLayout, TwoRowLayout } from '../../common/layout';
+import { ResizableTwoColumnLayout, ResizableTwoRowLayout } from '../../common/layout';
 import { AppStateView } from './StateMachine';
 import { createContext, useEffect, useState } from 'react';
 import { Status, useLocationParams } from '../../../utils';
@@ -424,7 +424,7 @@ export const AppView = (props: {
     // Otherwise, compare milliseconds
     return timeB - timeA;
   });
-  const Layout = props.orientation === 'stacked_horizontal' ? TwoColumnLayout : TwoRowLayout;
+  // Remove unused Layout variable since we now conditionally use layouts inline
   const currentStep = stepsSorted.find(
     (step) =>
       step.step_start_log.sequence_id === currentSequenceLocation?.sequenceId &&
@@ -486,71 +486,127 @@ export const AppView = (props: {
         refreshAnnotationData: refetchAnnotationsData
       }}
     >
-      <Layout
-        mode={fullScreen ? 'expanding-second' : minimizedTable ? 'first-minimal' : 'half'}
-        firstItem={
-          <div className="w-full h-full flex flex-col">
-            <div
-              className={`w-full ${fullScreen ? 'h-full' : props.orientation === 'stacked_vertical' ? 'h-full' : 'h-1/2'}`}
-            >
-              <ApplicationTable
-                steps={stepsSorted}
-                appID={appID}
-                partitionKey={partitionKey}
-                numPriorIndices={NUM_PREVIOUS_ACTIONS}
-                autoRefresh={autoRefresh}
-                setAutoRefresh={setAutoRefresh}
-                minimized={minimizedTable}
-                setMinimized={setMinimizedTable}
-                projectId={projectId}
-                parentPointer={data?.parent_pointer || undefined}
-                spawningParentPointer={data?.spawning_parent_pointer || undefined}
-                links={data.children || []}
-                fullScreen={fullScreen}
-                setFullScreen={setFullScreen}
-                allowFullScreen={props.enableFullScreenStepView}
-                allowMinimized={props.enableMinimizedStepView}
-                topToBottomChronological={topToBottomChronological}
-                setTopToBottomChronological={setTopToBottomChronological}
-                toggleInspectViewOpen={() => setInspectViewOpen(!inspectViewOpen)}
-                displayAnnotations={displayAnnotations}
-                annotations={annotationsData || []}
-              />
+      {props.orientation === 'stacked_vertical' ? (
+        <ResizableTwoColumnLayout
+          mode={fullScreen ? 'expanding-second' : minimizedTable ? 'first-minimal' : 'half'}
+          firstItem={
+            <div className="w-full h-full flex flex-col">
+              <div className={`w-full ${fullScreen ? 'h-full' : 'h-1/2'}`}>
+                <ApplicationTable
+                  steps={stepsSorted}
+                  appID={appID}
+                  partitionKey={partitionKey}
+                  numPriorIndices={NUM_PREVIOUS_ACTIONS}
+                  autoRefresh={autoRefresh}
+                  setAutoRefresh={setAutoRefresh}
+                  minimized={minimizedTable}
+                  setMinimized={setMinimizedTable}
+                  projectId={projectId}
+                  parentPointer={data?.parent_pointer || undefined}
+                  spawningParentPointer={data?.spawning_parent_pointer || undefined}
+                  links={data.children || []}
+                  fullScreen={fullScreen}
+                  setFullScreen={setFullScreen}
+                  allowFullScreen={props.enableFullScreenStepView}
+                  allowMinimized={props.enableMinimizedStepView}
+                  topToBottomChronological={topToBottomChronological}
+                  setTopToBottomChronological={setTopToBottomChronological}
+                  toggleInspectViewOpen={() => setInspectViewOpen(!inspectViewOpen)}
+                  displayAnnotations={displayAnnotations}
+                  annotations={annotationsData || []}
+                />
+              </div>
+              {!fullScreen && (
+                <div className="h-1/2 w-[full]">
+                  <GraphView
+                    stateMachine={data.application}
+                    currentAction={currentStep}
+                    highlightedActions={[]}
+                    hoverAction={hoverAction}
+                  />
+                </div>
+              )}
             </div>
-            {!fullScreen && props.orientation === 'stacked_horizontal' && (
-              <div className="h-1/2 w-[full]">
+          }
+          secondItem={
+            <AppStateView
+              steps={currentFocusStepsData?.steps || stepsSorted}
+              stateMachine={currentFocusStepsData?.application || data.application}
+              highlightedActions={[]}
+              hoverAction={hoverAction}
+              currentActionLocation={currentSequenceLocation}
+              displayGraphAsTab={displayGraphAsTabs}
+              setMinimized={(min: boolean) => setInspectViewOpen(!min)}
+              isMinimized={!inspectViewOpen}
+              allowMinimized={inspectViewOpen && fullScreen}
+              annotations={currentFocusAnnotationsData || annotationsData}
+              restrictTabs={props.restrictTabs}
+              allowAnnotations={displayAnnotations}
+            />
+          }
+          animateSecondPanel={inspectViewOpen}
+        />
+      ) : (
+        <ResizableTwoColumnLayout
+          mode={fullScreen ? 'expanding-second' : minimizedTable ? 'first-minimal' : 'half'}
+          firstItem={
+            <ResizableTwoRowLayout
+              minFirstPanelHeight={120}
+              defaultFirstPanelHeight={200}
+              firstItem={
+                <ApplicationTable
+                  steps={stepsSorted}
+                  appID={appID}
+                  partitionKey={partitionKey}
+                  numPriorIndices={NUM_PREVIOUS_ACTIONS}
+                  autoRefresh={autoRefresh}
+                  setAutoRefresh={setAutoRefresh}
+                  minimized={minimizedTable}
+                  setMinimized={setMinimizedTable}
+                  projectId={projectId}
+                  parentPointer={data?.parent_pointer || undefined}
+                  spawningParentPointer={data?.spawning_parent_pointer || undefined}
+                  links={data.children || []}
+                  fullScreen={fullScreen}
+                  setFullScreen={setFullScreen}
+                  allowFullScreen={props.enableFullScreenStepView}
+                  allowMinimized={props.enableMinimizedStepView}
+                  topToBottomChronological={topToBottomChronological}
+                  setTopToBottomChronological={setTopToBottomChronological}
+                  toggleInspectViewOpen={() => setInspectViewOpen(!inspectViewOpen)}
+                  displayAnnotations={displayAnnotations}
+                  annotations={annotationsData || []}
+                />
+              }
+              secondItem={
                 <GraphView
                   stateMachine={data.application}
                   currentAction={currentStep}
-                  // highlightedActions={previousActions}
                   highlightedActions={[]}
                   hoverAction={hoverAction}
                 />
-              </div>
-            )}
-          </div>
-        }
-        secondItem={
-          <AppStateView
-            steps={currentFocusStepsData?.steps || stepsSorted}
-            stateMachine={currentFocusStepsData?.application || data.application}
-            // stateMachine={data.application}
-            // highlightedActions={previousActions}
-            highlightedActions={[]}
-            hoverAction={hoverAction}
-            currentActionLocation={currentSequenceLocation}
-            displayGraphAsTab={displayGraphAsTabs} // in this case we want the graph as a tab
-            setMinimized={(min: boolean) => setInspectViewOpen(!min)}
-            isMinimized={!inspectViewOpen}
-            allowMinimized={inspectViewOpen && fullScreen}
-            // TODO -- render better if this is undefined -- this is an odd way to fall back
-            annotations={currentFocusAnnotationsData || annotationsData}
-            restrictTabs={props.restrictTabs}
-            allowAnnotations={displayAnnotations}
-          />
-        }
-        animateSecondPanel={inspectViewOpen}
-      />
+              }
+            />
+          }
+          secondItem={
+            <AppStateView
+              steps={currentFocusStepsData?.steps || stepsSorted}
+              stateMachine={currentFocusStepsData?.application || data.application}
+              highlightedActions={[]}
+              hoverAction={hoverAction}
+              currentActionLocation={currentSequenceLocation}
+              displayGraphAsTab={displayGraphAsTabs}
+              setMinimized={(min: boolean) => setInspectViewOpen(!min)}
+              isMinimized={!inspectViewOpen}
+              allowMinimized={inspectViewOpen && fullScreen}
+              annotations={currentFocusAnnotationsData || annotationsData}
+              restrictTabs={props.restrictTabs}
+              allowAnnotations={displayAnnotations}
+            />
+          }
+          animateSecondPanel={inspectViewOpen}
+        />
+      )}
     </AppContext.Provider>
   );
 };

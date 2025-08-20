@@ -766,7 +766,7 @@ export const AnnotationsTable = (props: {
       </Table>
       {props.annotations.length === 0 && (
         <div className="flex flex-row justify-center items-center h-96">
-          <div className="text-gray-400 text-lg flex flex-row gap-1">
+          <div className="text-gray-400 text-sm flex flex-row gap-1">
             No annotations found -- go to an application run and click on an entry in the
             annnotations column <PencilIcon className="h-6 w-6" /> to add annotations.
           </div>

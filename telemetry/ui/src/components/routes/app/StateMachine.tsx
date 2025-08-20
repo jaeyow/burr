@@ -14,7 +14,7 @@ import { useLocationParams } from '../../../utils';
 const NoStepSelected = () => {
   return (
     <div className="flex flex-col items-center justify-center h-full">
-      <p className="text-xl text-gray-400">Please select a step from the table on the left</p>
+      <p className="text-sm text-gray-400">Please select a step from the table on the left</p>
     </div>
   );
 };
