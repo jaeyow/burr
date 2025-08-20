@@ -1,4 +1,5 @@
 import { ActionModel, ApplicationModel, Step } from '../../../api';
+import { getActionStatus } from '../../../utils';
 
 import ELK from 'elkjs/lib/elk.bundled.js';
 import React, { createContext, useCallback, useLayoutEffect, useRef, useState } from 'react';
@@ -14,9 +15,6 @@ import {
   getBezierPath,
   useReactFlow
 } from '@xyflow/react';
-
-import { backgroundColorsForIndex } from './AppView';
-import { getActionStatus } from '../../../utils';
 
 // Pastel color palette for nodes (same as GraphBuilder)
 const pastelColors = [
@@ -100,32 +98,57 @@ const ActionNode = (props: { data: NodeData }) => {
   const shouldHighlight = indexOfAction !== -1;
   const step = highlightedActions[indexOfAction];
   const isCurrentAction = currentAction?.step_start_log.action === name;
-  
+
   // Calculate color index based on action name hash for consistent colors
-  const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % pastelColors.length;
+  const colorIndex =
+    name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % pastelColors.length;
   const colors = pastelColors[colorIndex];
-  
-  const bgColor =
-    isCurrentAction && step !== undefined
-      ? backgroundColorsForIndex(0, getActionStatus(step))
-      : shouldHighlight
-        ? colors.background
-        : colors.background;
+
+  // Use status-based colors for current action (same as list view)
+  let bgColor: string;
+  let borderColor: string;
+  let textColor: string;
+
+  if (isCurrentAction && step) {
+    const status = getActionStatus(step);
+    switch (status) {
+      case 'success':
+        bgColor = '#10b981'; // green-500 (same as list view)
+        borderColor = '#059669'; // green-600
+        textColor = 'white';
+        break;
+      case 'failure':
+        bgColor = '#ea5556'; // dwred (same as list view)
+        borderColor = '#dc2626'; // red-600 for darker border
+        textColor = 'white';
+        break;
+      case 'running':
+        bgColor = '#429dbc'; // dwlightblue (same as list view)
+        borderColor = '#0284c7'; // sky-600 for darker border
+        textColor = 'white';
+        break;
+      default:
+        bgColor = colors.background;
+        borderColor = colors.border;
+        textColor = colors.border;
+    }
+  } else {
+    // Use pastel colors for non-current actions
+    bgColor = shouldHighlight ? colors.background : colors.background;
+    borderColor = shouldHighlight ? colors.border : colors.border;
+    textColor = colors.border;
+  }
+
   const opacity = hoverAction?.step_start_log.action === name ? 'opacity-50' : '';
-  const borderColor = isCurrentAction
-    ? '#429dbce6'
-    : shouldHighlight
-      ? colors.border
-      : colors.border;
-  
+
   return (
     <>
-      <Handle 
-        type="target" 
+      <Handle
+        type="target"
         position={Position.Top}
         style={{
           background: 'white',
-          border: `2px solid ${colors.border}`,
+          border: `2px solid ${borderColor}`,
           width: 12,
           height: 12
         }}
@@ -135,18 +158,18 @@ const ActionNode = (props: { data: NodeData }) => {
         style={{
           backgroundColor: bgColor,
           borderColor: borderColor,
-          color: isCurrentAction ? 'white' : colors.border,
+          color: textColor,
           minWidth: '120px'
         }}>
         {name}
       </div>
-      <Handle 
-        type="source" 
-        position={Position.Bottom} 
+      <Handle
+        type="source"
+        position={Position.Bottom}
         id="a"
         style={{
           background: 'white',
-          border: `2px solid ${colors.border}`,
+          border: `2px solid ${borderColor}`,
           width: 12,
           height: 12
         }}
@@ -158,7 +181,7 @@ const ActionNode = (props: { data: NodeData }) => {
 const InputNode = (props: { data: NodeData }) => {
   return (
     <>
-      <div 
+      <div
         className="text-lg font-sans p-4 rounded-lg border-2 border-dashed transition-all duration-200 ease-in-out shadow-sm hover:shadow-md text-center"
         style={{
           borderColor: '#666',
@@ -168,9 +191,9 @@ const InputNode = (props: { data: NodeData }) => {
         }}>
         {props.data.label}
       </div>
-      <Handle 
-        type="source" 
-        position={Position.Bottom} 
+      <Handle
+        type="source"
+        position={Position.Bottom}
         id="a"
         style={{
           background: 'white',
@@ -217,7 +240,7 @@ export const ActionActionEdge = ({
 
   const edgeStyle: React.CSSProperties = {
     strokeWidth: selected ? 4 : shouldHighlight ? 3 : 2,
-    stroke: shouldHighlight ? '#429dbce6' : data?.condition === 'default' ? '#94a3b8' : '#429dbce6'
+    stroke: shouldHighlight ? '#429dbce6' : '#429dbce6' // Use same color for all edges to match arrow markers
   };
 
   // Add dashed animation for conditional edges
@@ -263,7 +286,7 @@ const getLayoutedElements = (
     },
     {} as { [key: string]: EdgeType }
   );
-  
+
   const graph = {
     id: 'root',
     layoutOptions: { ...elkOptions, ...options },
@@ -273,7 +296,7 @@ const getLayoutedElements = (
       const labelLength = nodeData.label.length;
       const width = Math.max(150, labelLength * 8 + 40); // Dynamic width based on label
       const height = node.type === 'externalInput' ? 60 : 80; // Different heights for different node types
-      
+
       return {
         ...node,
         // Adjust the target and source handle positions based on the layout direction
