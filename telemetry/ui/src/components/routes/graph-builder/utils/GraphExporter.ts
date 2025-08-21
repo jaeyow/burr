@@ -30,22 +30,22 @@ export class GraphExporter {
       metadata: {
         created: new Date().toISOString(),
         title: 'Burr Graph',
-        description: 'Generated from Burr Graph Builder',
+        description: 'Generated from Burr Graph Builder'
       },
-      nodes: nodes.map(node => ({
+      nodes: nodes.map((node) => ({
         id: node.id,
         label: (node.data.label as string) || 'Unnamed Node',
         description: (node.data.description as string) || undefined,
         nodeType: this.mapNodeType((node.data.nodeType as string) || 'action'),
-        position: node.position,
+        position: node.position
       })),
-      edges: edges.map(edge => ({
+      edges: edges.map((edge) => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
         condition: (edge.data?.label as string) || (edge.data?.condition as string) || undefined,
-        isConditional: Boolean(edge.data?.isConditional) || false,
-      })),
+        isConditional: Boolean(edge.data?.isConditional) || false
+      }))
     };
 
     return exportData;
@@ -60,19 +60,5 @@ export class GraphExporter {
       default:
         return 'action';
     }
-  }
-
-  static downloadJSON(data: BurrGraphJSON, filename: string = 'burr-graph.json'): void {
-    const jsonString = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   }
 }

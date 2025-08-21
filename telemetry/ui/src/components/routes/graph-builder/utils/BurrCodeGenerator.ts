@@ -285,17 +285,4 @@ if __name__ == "__main__":
         .replace(/^_|_$/g, '') || 'condition'
     );
   }
-
-  static downloadPythonCode(code: string, filename: string = 'burr_graph.py'): void {
-    const blob = new Blob([code], { type: 'text/x-python' });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }
 }
